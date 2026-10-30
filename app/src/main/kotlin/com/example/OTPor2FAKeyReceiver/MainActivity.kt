@@ -1,72 +1,71 @@
 package com.example.OTPor2FAKeyReceiver
 
-import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
+import android.content.ClipboardManager
+import android.content.ClipData
+import android.os.Build
 import android.os.Bundle
+import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 
-class MainActivity : AppCompatActivity(), KeyReceiver.OtpListener {
+class MainActivity : AppCompatActivity() {
 
+    private lateinit var tvSource: TextView
     private lateinit var tvOtp: TextView
-    private lateinit var tvSender: TextView
-    private val smsReceiver = KeyReceiver()
-    private val PERMISSION_REQUEST_CODE = 101
+    private lateinit var btnCopy: Button
+    private var currentOtpCode: String = ""
+
+    private val otpUpdateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val sender = intent?.getStringExtra("sender") ?: "Unknown"
+            val otp = intent?.getStringExtra("otp") ?: ""
+
+            currentOtpCode = otp
+            tvSource.text = "Source Name: $sender"
+            tvOtp.text = "OTP Code: $otp"
+            btnCopy.isEnabled = otp.isNotEmpty() && otp.all { it.isDigit() }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // Simple programmatic layout to avoid needing an external layout XML file
-        val layout = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(50, 50, 50, 50)
-        }
+        setContentView(R.layout.activity_main)
 
-        tvSender = TextView(this).apply {
-            text = "Source Name: Waiting..."
-            textSize = 18f
-            setPadding(0, 0, 0, 30)
-        }
+        tvSource = findViewById(R.id.tvSource)
+        tvOtp = findViewById(R.id.tvOtp)
+        btnCopy = findViewById(R.id.btnCopy)
 
-        tvOtp = TextView(this).apply {
-            text = "OTP Code: Waiting..."
-            textSize = 22f
-            setTypeface(null, android.graphics.Typeface.BOLD)
-        }
-
-        layout.addView(tvSender)
-        layout.addView(tvOtp)
-        setContentView(layout)
-
-        KeyReceiver.listener = this
-
-        // Request runtime SMS permissions
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS),
-                PERMISSION_REQUEST_CODE
-            )
+        btnCopy.setOnClickListener {
+            copyOtpToClipboard(currentOtpCode)
         }
     }
 
     override fun onResume() {
         super.onResume()
-        registerReceiver(smsReceiver, IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
+        val filter = IntentFilter("com.example.OTP_UPDATED")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(otpUpdateReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(otpUpdateReceiver, filter)
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        unregisterReceiver(smsReceiver)
+        unregisterReceiver(otpUpdateReceiver)
     }
 
-    override fun onOtpReceived(otp: String, sender: String) {
-        runOnUiThread {
-            tvOtp.text = "OTP Code: $otp"
-            tvSender.text = "Source Name: $sender"
+    private fun copyOtpToClipboard(code: String) {
+        if (code.isNotEmpty()) {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("OTP Code", code)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "OTP Code copied: $code", Toast.LENGTH_SHORT).show()
         }
     }
 }
