@@ -23,8 +23,11 @@ jobs:
       with:
         gradle-version: '8.7'
 
-    - name: Build Debug APK
-      run: gradle assembleDebug
+    - name: Make Gradlew Executable
+      run: chmod +x gradlew
+
+    - name: Clean and Build Debug APK
+      run: ./gradlew clean assembleDebug --no-build-cache
 
     - name: Rename APK file
       run: |
