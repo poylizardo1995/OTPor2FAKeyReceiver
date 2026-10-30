@@ -12,7 +12,7 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.example.OTPor2FAKeyReceiver.R // <--- Add this explicit import
+import com.example.OTPor2FAKeyReceiver.R
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
     private var currentOtpCode: String = ""
 
     private val otpUpdateReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
+        onReceive(context: Context?, intent: Intent?) {
             val sender = intent?.getStringExtra("sender") ?: "Unknown"
             val otp = intent?.getStringExtra("otp") ?: ""
 
