@@ -18,12 +18,24 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Generate Gradle Wrapper (Stable 8.7)
-      run: gradle wrapper --gradle-version 8.7
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-      continue-on-error: true
+    - name: Force Gradle 8.7 Wrapper Setup
+      run: |
+        # Download and configure Gradle 8.7 wrapper properties directly
+        mkdir -p gradle/wrapper
+        echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
+        echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+        echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip" >> gradle/wrapper/gradle-wrapper.properties
+        echo "networkTimeout=10000" >> gradle/wrapper/gradle-wrapper.properties
+        echo "validateDistributionUrl=true" >> gradle/wrapper/gradle-wrapper.properties
+        echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
+        echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+        
+        # Download the wrapper jar if not present
+        curl -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.7/subprojects/wrapper/src/main/resources/gradle-wrapper.jar
+        
+        # Create gradlew script
+        curl -o gradlew https://raw.githubusercontent.com/gradle/gradle/v8.7/gradlew
+        chmod +x gradlew
 
     - name: Build Debug APK
       run: ./gradlew assembleDebug
