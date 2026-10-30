@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
     private var currentOtpCode: String = ""
 
     private val otpUpdateReceiver = object : BroadcastReceiver() {
-        onReceive(context: Context?, intent: Intent?) {
+        override fun onReceive(context: Context?, intent: Intent?) { // <--- Added override fun here
             val sender = intent?.getStringExtra("sender") ?: "Unknown"
             val otp = intent?.getStringExtra("otp") ?: ""
 
